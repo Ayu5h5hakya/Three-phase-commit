@@ -8,6 +8,7 @@ import java.lang.Thread;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 public class NewClients implements Runnable{
@@ -15,14 +16,13 @@ public class NewClients implements Runnable{
     private boolean stop;
     private int port;
     private ServerSocket socket;
-    NewClients(int port){
+    NewClients(int port,ServerSocket socket){
         stop = false;
         this.port = port;
+        this.socket = socket;
     }
     @Override
     public void run() {
-        try{
-            socket = new ServerSocket(port);
             //System.out.println(Thread.currentThread().getName()+": listening on port:"+port);
             while(!stop){
                 Socket newClient = null;
@@ -34,10 +34,10 @@ public class NewClients implements Runnable{
                     //System.out.println("Got TCP connection with " + ip+ ":" + port);
                     Server.connections.put(Server.connections.size()+1,newClient);
                 }
+                catch (SocketException e){break;}
                 catch (SocketTimeoutException e){e.printStackTrace();}
                 catch (IOException e){e.printStackTrace();}
             }
-        }catch (IOException e){e.printStackTrace();}
     }
     public void finish(){
         stop = true;
