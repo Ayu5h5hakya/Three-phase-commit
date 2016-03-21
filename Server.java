@@ -1,7 +1,9 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.InterruptedException;
@@ -36,10 +38,13 @@ public class Server
   static long startTime;
   static Scanner scanner;
   static ServerSocket socket;
+  static FileWriter fw;
+  static File newTextFile;
   static PrintWriter printWriter= null;
   public static void main(String[] argv) throws IOException
   {
-
+      newTextFile = new File("cordinatorlog.txt");
+      fw = new FileWriter(newTextFile);
       socket = new ServerSocket(LISTEN_PORT);
       NewClients newClients = new NewClients(LISTEN_PORT,socket);
       new Thread(newClients).start();
@@ -109,8 +114,10 @@ public class Server
       sendResponse(PRE_COMMIT);
       socket.close();
       check = false;
-
     }
+//    else if(kill_response.equals("n") || kill_response.equals("N")){
+//      sendResponse(GLOBAL_COMMIT);
+//    }
 
   }
   private static void phase3()
@@ -118,9 +125,10 @@ public class Server
     System.out.println("Sending global commit message");
     sendResponse("GLOBAL_COMMIT");
   }
-  private static void sendResponse(String response)
+  private static void sendResponse (String response)
   {
     try{
+      fw.write("asdasdas");
      for (int i=0;i<connections.size();++i)
      {
        tempSocket = connections.get(i+1);

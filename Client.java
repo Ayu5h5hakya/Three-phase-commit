@@ -1,5 +1,7 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Override;
@@ -26,10 +28,12 @@ public class Client
     public static int ABORT=0;
     public static int ACK=2;
     public static String last = "";
-    public static long startTime=-1;
+    public static boolean response_sent=false;
     public static PrintWriter printWriter=null;
     public static void main(String[] argv) throws IOException
     {
+        File newTextFile = new File("cohert"+argv[0]+"log.txt");
+        FileWriter fw = new FileWriter(newTextFile);
         String temp = "";
         try{
             socket = new Socket(COORDINATOR_IP,COORDINATOR_PORT);
@@ -63,9 +67,27 @@ public class Client
                 {
                     last = VOTE_REQUEST;
                     System.out.println("Are you ready to commit?");
-                    Scanner scanner = new Scanner(System.in);
-                    AbortListener abortListener = new AbortListener(dataInputStream,scanner);
-                    new Thread(abortListener).start();
+                    final Scanner scanner = new Scanner(System.in);
+                   // AbortListener abortListener = new AbortListener(dataInputStream,scanner);
+                   // new Thread(abortListener).start();
+                    new java.util.Timer().schedule(
+                            new java.util.TimerTask() {
+                                @Override
+                                public void run() {
+                                    if(!response_sent)
+                                    {
+                                        try {
+                                            System.out.print("GLOBAL_ABORT");
+                                            fw.write("GLOBAL_ABORT");
+                                            fw.close();
+                                        }
+                                        catch (IOException e){e.printStackTrace();}
+                                    }
+                                    scanner.close();
+                                }
+                            },
+                            10000
+                    );
                     temp = scanner.next().trim();
                     if(temp.equals("Y") || temp.equals("y"))
                     {
@@ -75,21 +97,25 @@ public class Client
                     {
                         dataOutputStream.write(ABORT);
                     }
+                    response_sent = true;
                 }
                 else if (server_request.equals("GLOBAL_COMMIT"))
                 {
                     last = "GLOBAL_COMMIT";
+                    fw.write("GLOBAL_COMMIT");
                     System.out.println("GLOBAL_COMMIT");
                     break;
                 }
                 else if (server_request.equals("GLOBAL_ABORT"))
                 {
                     last = "GLOBAL_ABORT";
+                    fw.write("GLOBAL_ABORT");
                     System.out.println("GLOBAL_ABORT");
                     break;
                 }
                 else if (server_request.equals("PRE_COMMIT"))
                 {
+                    fw.write("PRE_COMMIT");
                     if (last.equals("PRE_COMMIT"))
                     {
                        // System.out.println(""+socket.getInetAddress().isReachable(TIMEOUT));
@@ -99,7 +125,6 @@ public class Client
                     last="PRE_COMMIT";
                     dataOutputStream.write(ACK);
                 }
-                else System.out.println("asdadasdas");
             }
         }catch (IOException e){e.printStackTrace();}
     }
